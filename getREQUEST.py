@@ -53,18 +53,25 @@ def getRESPONSE(request_path,databse, token, self):
 
     
     
-    elif "/image" in request_path:
-        p = request_path[1:]
-        images = open(p, "rb").read()
-        self.request.sendall(("HTTP/1.1 200 OK\r\nContent-Type: image/jpg\r\nX-Content-Type-Options: nosniff\r\n\r\n".encode() + images))
+    # elif "/image" in request_path:
+    #     image_path = "/image"
+    #     p = request_path[1:]
+    #     # p = p[6:]
+    #     # p = p.replace("/","")
+    #     # p = image_path
+    #     images = open(p, "rb").read()
+    #     self.request.sendall(("HTTP/1.1 200 OK\r\nContent-Type: image/jpg\r\nX-Content-Type-Options: nosniff\r\n\r\n".encode() + images))
 
     elif "/Uimages" in request_path:
         p = request_path[1:] 
-        #print(p)
+        p = p.replace("/","")
         images = open(p, "rb").read()
+        self.request.sendall((("HTTP/1.1 200 OK\r\nContent-Length: " + str(len(images)) + "\r\nContent-Type: image/jpeg\r\nX-Content-Type-Options: nosniff\r\n\r\n").encode() + images))
+
+        #print(p)
+        
         #print(images)
 
-        self.request.sendall((("HTTP/1.1 200 OK\r\nContent-Length: " + str(len(images)) + "\r\nContent-Type: image/jpeg\r\nX-Content-Type-Options: nosniff\r\n\r\n").encode() + images))
     
     
     

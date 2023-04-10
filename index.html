@@ -8,11 +8,13 @@
     <h1>CSE312 Sample Page</h1>
 
     <p id="paragraph">This text is from the HTML file 🙂</p>
+    <p id="myDiv"></p>
 
     <p>Here's a flamingo:</p>
 
     <img src="image/flamingo.jpg" alt="It's a flamingo" class="my_image" />
 
+    <!-- HW2 source code -->
     <form action="/image-upload" id="image-form" method="post" enctype="multipart/form-data">
       <!-- <input value="AQAAAjppCA8mheis2Uvw0TeiVZ" name="xsrf_token" hidden> -->
       <label for="iamge-form-user">User: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
@@ -25,11 +27,32 @@
       <input id="form-file" type="file" name="upload">
       <input type="submit" value="Post">
     </form>
+
+    <!-- HW3 source code -->
+    <label for="chat-comment">Chat: </label>
+    <input id="chat-comment" type="text" name="comment">
+
+    <button onclick="sendMessage()">Send</button>
+
+    <div id="chat"></div>
+
+    <br/>
+    <button onclick="startVideo()">Start My Video</button>
+    <br/>
+    <button onclick="connectWebRTC()">Start Video Chat</button>
+    <br/>
+
+    <video id="myVideo" autoplay muted></video>
+    <br/>
+    <video id="otherVideo" autoplay></video>
+
+
     <p>{{TOKEN}}</p>
     <p>{{LOOP}}</p>
 
 
     <script src="functions.js"></script>
+    <script src="new-javascript.js"></script>
 
     
 

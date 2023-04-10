@@ -96,14 +96,14 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                     bBody += self.request.recv(2048) #request more bytes
                     length_Body = len(bBody)
                 Decoded_body = bBody.split(b'\r\n--' + encodedBoundary)
-                user = Decoded_body[0].split(b'\r\n\r\n')[1].decode()
-                comment = Decoded_body[1].split(b'\r\n\r\n')[1].decode()
+                user = Decoded_body[0].split(b'\r\n\r\n')[1].decode().replace('&', "&amp;").replace('<',"&lt").replace('>',"&gt;")
+                comment = Decoded_body[1].split(b'\r\n\r\n')[1].decode().replace('&', "&amp;").replace('<',"&lt").replace('>',"&gt;")
                 
 
                 Arr_of_bytes = bBody.split(b'\r\n--' + encodedBoundary)
                 print("here")
                 imageLocation = Arr_of_bytes[2].split(b'\r\n\r\n',1)[1]
-                print("1")
+                print("1") 
                 if len(imageLocation) != 0:
                     
                     
