@@ -4,7 +4,8 @@ import sys
 import postREQUEST
 import secrets
 from pymongo import MongoClient
-
+import hashlib
+import base64
 # docker-compose up --build (start server)
 # ctrl c (stop server)
 # http://localhost:8080/
@@ -16,17 +17,17 @@ image_counter_collection = db["count"] # counter to update the image name find_o
 image_counter_collection.insert_one({"counter" : 0})
 
 
-
 class MyTCPHandler(socketserver.BaseRequestHandler):
     def handle(self):
         #dictionary to parse key : value pair
-        dict = {}
+        
         
         xsrf = secrets.token_hex(10)
 
         received_data = self.request.recv(2048) # data get from server
         #.split("\r\n",1)
         # bytes of a request
+        
         bytes = received_data
         separator = bytes.find(b'\r\n\r\n')
         bHeader = bytes[:separator]
@@ -35,13 +36,14 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         print(data)
 
         #parsing data
+        
+        
         request_line = data.split("\r\n",1)[0]
         line = request_line.split(" ")
         request_type = line[0]
         
         replace_html = ""
-
-
+        
         for listOfDict in chatlogs_collection.find({},{"_id": 0}):
             for log in listOfDict:
                 users = log
@@ -58,8 +60,20 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 
         #GET REQUEST
         if request_type == "GET":
+            strings = received_data.decode()
+            request_body = strings.split("\r\n") 
+            keys = ""
+            for lines in request_body:
+                    if "Sec-WebSocket-Key:" in lines:
+                        keys = lines.split(" ")[1]
+            print(keys.encode()) 
+            # for line in request_body:
+            #     if "Sec-WebSocket-Key:" in line:
+            #         key = line.split(" ")[1]
+            
+            #print(WebSocket_Accept)
 
-            getREQUEST.getRESPONSE(line[1], replace_html, xsrf, self)
+            getREQUEST.getRESPONSE(line[1], replace_html, xsrf,keys, self)
 
         #POST REQUEST   
         elif request_type == "POST":
@@ -88,9 +102,9 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                 
                 length_Body = len(bBody)
                 encodedContentLength = contentLength.encode()
-                print(encodedContentLength)
+                #print(encodedContentLength)
                 encodedBoundary = boundary.encode()
-                print(encodedBoundary)
+                #print(encodedBoundary)
                 
                 while length_Body < int(encodedContentLength):
                     bBody += self.request.recv(2048) #request more bytes
@@ -101,32 +115,32 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                 
 
                 Arr_of_bytes = bBody.split(b'\r\n--' + encodedBoundary)
-                print("here")
+                #print("here")
                 imageLocation = Arr_of_bytes[2].split(b'\r\n\r\n',1)[1]
-                print("1") 
+                #print("1") 
                 if len(imageLocation) != 0:
                     
                     
-                    print("ad")
+                    #print("ad")
                     count = image_counter_collection.find_one({}, {"_id" : 0})
                     counter = count["counter"]
-                    print("2")
+                    #print("2")
 
 
                     chatlogs_collection.insert_one({"images" : "Uimages" + str(counter) + ".jpg"})
                     
-                    print("3")
+                    #print("3")
                     with open("Uimages" + str(counter) + ".jpg", "wb") as file:
                         file.write(imageLocation)
                         
-                        print("4")
+                        #print("4")
                     image_counter_collection.update_one({"counter" : counter}, {"$set" : {"counter" : counter + 1}})
                         
                         
                         
-                print(user)
-                print(comment)
-                print("test")
+                #print(user)
+                #print(comment)
+                #print("test")
             chatlogs_collection.insert_one({user : comment})
             
             self.request.sendall(("HTTP/1.1 302 Found\r\nContent-Length: 0\r\nLocation:http://localhost:8080/").encode())

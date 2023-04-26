@@ -1,7 +1,9 @@
+
 // Establish a WebSocket connection with the server
 const socket = new WebSocket('ws://' + window.location.host + '/websocket');
 
 let webRTCConnection;
+
 
 // Allow users to send messages by pressing enter instead of clicking the Send button
 document.addEventListener("keypress", function (event) {

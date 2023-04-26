@@ -4,18 +4,22 @@ import server
 from bson.json_util import dumps
 import sys
 from pymongo import MongoClient
+import hashlib
+import base64
 
 # mongo_client = MongoClient("mongo")
 # db = mongo_client["cse312"]
 # logs_collection = db["logs"] #db.collection
 # chatlogs_collection = db["userComment"] # user : comment collection
 
-def getRESPONSE(request_path,databse, token, self):
+def getRESPONSE(request_path,databse, token,Accept_key, self):
     if request_path == "/hello":
         self.request.sendall(("HTTP/1.1 200 OK\r\nContent-Length: 11\r\nContent-Type: text/plain; charset=utf-8\r\nX-Content-Type-Options: nosniff\r\n\r\nHello World").encode())
     
     elif request_path == "/hi":
         self.request.sendall(("HTTP/1.1 301 Moved Permanently\r\nContent-Length: 0\r\nLocation: /hello").encode())
+
+    
     
     elif request_path == "/":
         cxrf = token
@@ -45,6 +49,15 @@ def getRESPONSE(request_path,databse, token, self):
         
         self.request.sendall(("HTTP/1.1 200 OK\r\nContent-Length: " + str(sizeinbyte) + "\r\nContent-Type: text/javascript; charset=utf-8\r\nX-Content-Type-Options: nosniff\r\n\r\n" + js_file).encode())
     
+
+    elif request_path == "/new-javascript.js":
+        js_file = open("new-javascript.js", "r").read()
+        sizef = os.path.getsize('new-javascript.js')
+        sizeinbyte = len(js_file)
+        print(sizef)
+        self.request.sendall(("HTTP/1.1 200 OK\r\nContent-Length: " + str(sizeinbyte + 3) + "\r\nContent-Type: text/javascript; charset=utf-8\r\nX-Content-Type-Options: nosniff\r\n\r\n" + js_file).encode())
+
+
     elif request_path == "/image/flamingo.jpg":
         p = request_path[1:]
         images = open(p, "rb").read()
@@ -71,9 +84,20 @@ def getRESPONSE(request_path,databse, token, self):
         #print(p)
         
         #print(images)
+    
 
-    
-    
+
+    # HW3 LO1 code starts here
+    elif "/websocket" in request_path:
+        WebSocket_Accept = Accept_key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+        WebSocket_Accept = hashlib.sha1(WebSocket_Accept.encode())
+        WebSocket_Accept = base64.b64encode(WebSocket_Accept.digest())
+        WebSocket_Accept += "\r\n\r\n".encode()
+        print(WebSocket_Accept)
+        self.request.sendall("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ".encode() + WebSocket_Accept)
+
+    elif "/chat-history" in request_path:
+        
     
 
     else:
