@@ -10,22 +10,34 @@ import html
 from server import MyTCPHandler
 from server import chat_messages
 
-def getRESPONSE(request_path,databse,Accept_key, self):
+def getRESPONSE(request_path,databse,Accept_key,data, self):
     if request_path == "/hello":
         self.request.sendall(("HTTP/1.1 200 OK\r\nContent-Length: 11\r\nContent-Type: text/plain; charset=utf-8\r\nX-Content-Type-Options: nosniff\r\n\r\nHello World").encode())
 
     
     
     elif request_path == "/":
-        
+        cookie = None
+        visit = 0
+        for line in data.split("\r\n")[1:]:
+            if line.startswith("Cookie:"):
+                cookie = line.split(" ")[1]
+                print(cookie)
+        if cookie:
+            visit = int(cookie.split("=")[1]) + 1
+        else:
+            visit = 1
         html_file = open("index.html", "r").read()
         #sizeh = os.path.getsize("index.html")
         sizeinbyte = len(html_file)
         # html_file = html_file.replace("{{TOKEN}}", '<input value="' +cxrf + '" name="xsrf_token" hidden>')
         html_file = html_file.replace("{{LOOP}}", databse)
+        html_file = html_file.replace("{{VISIT}}", str(visit))
         size = len(html_file)
         
-        self.request.sendall(("HTTP/1.1 200 OK\r\nContent-Length: " + str(size) + "\r\nContent-Type: text/html; charset=utf-8\r\nX-Content-Type-Options: nosniff\r\n\r\n"+ html_file).encode() )
+        
+        
+        self.request.sendall(("HTTP/1.1 200 OK\r\nContent-Length: " + str(size) + "\r\nContent-Type: text/html; charset=utf-8\r\nSet-Cookie: visits=" + str(visit) + "; Max-Age=3600; HttpOnly\r\nX-Content-Type-Options: nosniff\r\n\r\n"+ html_file).encode() )
 
     elif request_path == "/style.css":
         css_file = open("style.css").read()
