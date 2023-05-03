@@ -73,42 +73,62 @@ def getRESPONSE(request_path,databse,Accept_key,data, self):
         while True:
             data = self.request.recv(2)
             opcode = data[0] & 0b00001111
-            payload_len = data[1] & 0b01111111
 
             if opcode == 0x08:
                 break
+
+
+            payload_len = data[1] & 0b01111111
+            unMask_payloadData = b''
+            
             
             masking_key = self.request.recv(4)
+            print(payload_len)
             if payload_len < 126:
-                payload_data = self.request.recv(payload_len)
-            else:
-                break
+                payloadData = self.request.recv(payload_len)
 
-            unMask_payload_data = b''
-            for i in range(len(payload_data)):
-                unMasked_byte = payload_data[i] ^ masking_key[i % 4]
-                unMask_payload_data += bytes([unMasked_byte])
+
             
-            message_from_client = json.loads(unMask_payload_data.decode("utf-8"))
+            for i in range(len(payloadData)):
+                unMasked_byte = payloadData[i] ^ masking_key[i % 4]
+                unMask_payloadData += bytes([unMasked_byte])
+            
+            received_message = json.loads(unMask_payloadData.decode())
             print(MyTCPHandler.connections)
-            if message_from_client["messageType"] == "chatMessage":
+            if received_message["messageType"] == "chatMessage":
                 form_message = {
                     "messageType": "chatMessage",
                     "username": username,
-                    "comment": message_from_client["comment"].replace('&', "&amp;").replace('<',"&lt").replace('>',"&gt;")
+                    "comment": received_message["comment"].replace('&', "&amp;").replace('<',"&lt").replace('>',"&gt;")
                 }
                 chat_messages.insert_one({'username': form_message["username"], 'comment' : form_message["comment"]})
-                
+
                 length = len(json.dumps(form_message).encode())
+
                 if length <= 125:
-                    header = bytearray([0x81, length])
-                final_frame = bytes(header) + json.dumps(form_message).encode()
+
+                    sending_frame = bytearray()
+                    sending_frame.append(0x81)
+                    sending_frame.append(length)
+
+                elif length <= 65535:
+                    
+                    sending_frame= bytearray([0x81, 126]) + length.to_bytes(2, byteorder='big')
+                
+                else:
+                    sending_frame = bytearray()
+                    sending_frame.append(0x81)
+                    sending_frame.append(127)
+                    sending_frame.append(length.to_bytes(8, byteorder='big'))
+
+                final_frame = bytes(sending_frame) + json.dumps(form_message).encode()
                 
                 for each_client in MyTCPHandler.connections:
                     try:
                         each_client.request.sendall(final_frame)
                     except:
                         MyTCPHandler.connections.remove(each_client)
+                    
                 
                 
     elif "/chat-history" in request_path:
