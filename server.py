@@ -44,6 +44,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         request_line = data.split("\r\n",1)[0]
         line = request_line.split(" ")
         request_type = line[0]
+        not_signed = "You are not signed in yet"
         
         replace_html = ""
         #GET REQUEST
@@ -51,13 +52,19 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             strings = received_data.decode()
             request_body = strings.split("\r\n") 
             keys = ""
+            auth_token = ""
+            hashToken = ""
             for lines in request_body:
                     if "Sec-WebSocket-Key:" in lines:
                         keys = lines.split(" ")[1]
+
+                    
             print(keys.encode()) 
+
+            
                         
                 
-            getREQUEST.getRESPONSE(line[1], replace_html, keys,data, self)
+            getREQUEST.getRESPONSE(line[1], replace_html, keys,data,auth_token, self)
 
         elif request_type == "POST":
             post_data = bBody.decode()
@@ -69,7 +76,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                 salty = bcrypt.gensalt()
                 hashed_password = bcrypt.hashpw(password.encode(), salty)
                 users_collection.insert_one({"username": username, "password": hashed_password, "salt": salty})
-                self.request.sendall(("HTTP/1.1 302 Found\r\nContent-Length: 0\r\nLocation:http://localhost:8080/").encode())
+                self.request.sendall(("HTTP/1.1 301 Moved Permanently\r\nContent-Length: 0\r\nLocation: http://localhost:8080/").encode())
 
             elif line[1] == "/login":
                 username = post_data[0].split('=')[1]
@@ -79,8 +86,11 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                     token = secrets.token_hex(16)
                     hashed_token = hashlib.sha256(token.encode()).hexdigest()
                     users_collection.update_one({"username": username}, {"$set": {"auth_token": hashed_token}})
+                    cookie = "auth_token={}; HttpOnly; Max-Age={}".format(token, 3600)
+                    self.request.sendall(("HTTP/1.1 301 Moved Permanently\r\nSet-Cookie: {}\r\nContent-Length: 0\r\nLocation: http://localhost:8080/".format(cookie)).encode())
 
-                    self.request.sendall(("HTTP/1.1 302 Found\r\nSet-Cookie: auth_token=" + token + "; HttpOnly; Max-Age=3600; Path=/\r\nContent-Length: 0\r\nLocation:http://localhost:8080/\r\n").encode())
+                else:
+                    self.request.sendall(("HTTP/1.1 401 Unauthorized\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE html><html><head><title>Error</title></head><body><h1>Unauthorized</h1><p>You are not authorized to access this page.</p></body></html>").encode())
 
         print("\n")
         sys.stdout.flush()
